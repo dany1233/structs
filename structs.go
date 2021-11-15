@@ -11,24 +11,27 @@ var (
 	// DefaultTagName is the default tag name for struct fields which provides
 	// a more granular to tweak certain structs. Lookup the necessary functions
 	// for more info.
-	DefaultTagName = "structs" // struct's field default tag name
+	DefaultTagName    = "structs" // struct's field default tag name
+	DefaultIgnoreFlag = true
 )
 
 // Struct encapsulates a struct type to provide several high level functions
 // around the struct.
 type Struct struct {
-	raw     interface{}
-	value   reflect.Value
-	TagName string
+	raw        interface{}
+	value      reflect.Value
+	TagName    string
+	ignoreFlag bool
 }
 
 // New returns a new *Struct with the struct s. It panics if the s's kind is
 // not struct.
 func New(s interface{}) *Struct {
 	return &Struct{
-		raw:     s,
-		value:   strctVal(s),
-		TagName: DefaultTagName,
+		raw:        s,
+		value:      strctVal(s),
+		TagName:    DefaultTagName,
+		ignoreFlag: DefaultIgnoreFlag,
 	}
 }
 
@@ -106,12 +109,14 @@ func (s *Struct) FillMap(out map[string]interface{}) {
 
 		// if the value is a zero value and the field is marked as omitempty do
 		// not include
-		if tagOpts.Has("omitempty") {
-			zero := reflect.Zero(val.Type()).Interface()
-			current := val.Interface()
+		if s.ignoreFlag {
+			if tagOpts.Has("omitempty") {
+				zero := reflect.Zero(val.Type()).Interface()
+				current := val.Interface()
 
-			if reflect.DeepEqual(current, zero) {
-				continue
+				if reflect.DeepEqual(current, zero) {
+					continue
+				}
 			}
 		}
 
